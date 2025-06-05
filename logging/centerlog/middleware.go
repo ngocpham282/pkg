@@ -1,11 +1,10 @@
-package middleware
+package centerlog
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"pkg/logging"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 const (
@@ -13,18 +12,17 @@ const (
 	HeaderTraceID      = "X-Trace-Id"
 	HeaderForwardedFor = "X-Forwarded-For"
 
-	XRequestID = "x-request-id"
+	RequestID = "x-request-id"
 )
 
-func Logger() gin.HandlerFunc {
+func Log() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
-
 		reqID := c.GetHeader(HeaderRequestID)
-
 		if reqID == "" {
 			reqID = uuid.NewString()
-			c.Set(XRequestID, reqID)
+			//set into context
+			c.Set(RequestID, reqID)
 		}
 		endpoint := c.FullPath()
 
@@ -39,25 +37,16 @@ func Logger() gin.HandlerFunc {
 			With("client_ip", c.ClientIP()).
 			With("referer", c.Request.Referer())
 
+		//populate logger into context
 		c.Next()
+		duration := time.Since(start)
 
-		latency := time.Since(start).Milliseconds()
-		status := c.Writer.Status()
-		status = 502
+		l = l.With("duration", duration)
 
-		l = l.
-			With("latency_ms", latency).
-			With("status", status)
-
-		switch {
-		case status >= 200 && status < 400:
-			l.Infof("success")
-		case status >= 400 && status < 500:
-			l.Warn("client error")
-		case status >= 500 && status < 600:
-			l.Error("server error")
-		default:
-			l.Warn("unknown error")
+		if c.Writer.Status() >= 200 && c.Writer.Status() <= 299 {
+			l.Infof("success status code %d", c.Writer.Status())
+		} else {
+			l.Infof("error status code %d", c.Writer.Status())
 		}
 	}
 }

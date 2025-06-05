@@ -1,11 +1,15 @@
 package apif
 
+import (
+	"fmt"
+	"net/http"
+)
 
 type AppError struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Error error  `json:"error,omitempty"`
-	Details any `json:"details,omitempty"`
+	Code      int    `json:"code"`
+	Message   string `json:"message"`
+	BaseError error  `json:"error,omitempty"`
+	Details   any    `json:"details,omitempty"`
 }
 
 func (e *AppError) Error() string {
@@ -13,7 +17,7 @@ func (e *AppError) Error() string {
 }
 
 func (e *AppError) Unwrap() error {
-	return e.Error
+	return e.BaseError
 }
 
 func NewAppError(code int) *AppError {
@@ -29,7 +33,7 @@ func NewAppErrorWithMsg(code int, message string) *AppError {
 	}
 }
 func (e *AppError) WithError(err error) *AppError {
-	e.Error = err
+	e.BaseError = err
 	return e
 }
 func (e *AppError) WithDetails(details any) *AppError {

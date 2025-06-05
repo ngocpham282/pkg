@@ -84,6 +84,9 @@ func NewLogger(level string, development bool) *zap.SugaredLogger {
 // parameters.
 func NewLoggerFromEnv() *zap.SugaredLogger {
 	level := os.Getenv("LOG_LEVEL")
+	if level == "" {
+		level = defaultLogLevel
+	}
 	development := strings.ToLower(strings.TrimSpace(os.Getenv("LOG_MODE"))) == "development"
 	return NewLogger(level, development)
 }
