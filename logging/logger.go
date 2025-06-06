@@ -103,18 +103,20 @@ func DefaultLogger() *zap.SugaredLogger {
 func WithLogger(ctx context.Context, logger *zap.SugaredLogger) context.Context {
 	return context.WithValue(ctx, loggerKey, logger)
 }
+func From(ctx context.Context) *zap.SugaredLogger {
+	return FromContext(ctx)
+}
 
 // FromContext returns the logger stored in the context. If no such logger
 // exists, a default logger is returned.
 func FromContext(ctx context.Context) *zap.SugaredLogger {
-	if ctx == nil {
-		return DefaultLogger()
-	}
 	//check type of ctx
-	if ginCtx, ok := ctx.(*gin.Context); ok {
+	if ginCtx, ok := ctx.(*gin.Context); ok && ginCtx != nil {
 		// If ctx is a gin.Context,
 		// we need to extract the logger from the gin context.
-		ctx = ginCtx.Request.Context()
+		if ginCtx.Request != nil {
+			ctx = ginCtx.Request.Context()
+		}
 	}
 	if logger, ok := ctx.Value(loggerKey).(*zap.SugaredLogger); ok {
 		return logger

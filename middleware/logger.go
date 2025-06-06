@@ -26,6 +26,7 @@ func Logger() gin.HandlerFunc {
 			reqID = uuid.NewString()
 			c.Set(XRequestID, reqID)
 		}
+
 		endpoint := c.FullPath()
 
 		l := logging.
